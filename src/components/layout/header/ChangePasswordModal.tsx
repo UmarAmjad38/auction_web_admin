@@ -16,7 +16,9 @@ const ChangePasswordModal = ({ changePasswordOpen, setChangePasswordOpen }: any)
     const navigate = useNavigate()
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const [showOldPassword, setShowOldPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     // Formik setup
     const formik = useFormik({
@@ -33,7 +35,7 @@ const ChangePasswordModal = ({ changePasswordOpen, setChangePasswordOpen }: any)
                 .matches(/[A-Z]/, 'Password must include at least one uppercase letter')
                 .matches(/[a-z]/, 'Password must include at least one lowercase letter')
                 .matches(/\d/, 'Password must include at least one number')
-                .matches(/[@$!%*?&]/, 'Password must include at least one special character')
+                .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/, 'Password must include at least one special character')
                 .notOneOf([Yup.ref('oldPassword')], 'New password must not match old password')
                 .required('Password is required'),
             confirmPassword: Yup.string()
@@ -76,8 +78,14 @@ const ChangePasswordModal = ({ changePasswordOpen, setChangePasswordOpen }: any)
         }
     }
 
-    const togglePasswordVisibility = () => {
-        setShowPassword((prev) => !prev);
+    const togglePasswordVisibility = (field: string) => {
+        if (field === 'oldPassword') {
+            setShowOldPassword((prev) => !prev);
+        } else if (field === 'password') {
+            setShowNewPassword((prev) => !prev);
+        } else if (field === 'confirmPassword') {
+            setShowConfirmPassword((prev) => !prev);
+        }
     };
 
     return (
@@ -102,7 +110,7 @@ const ChangePasswordModal = ({ changePasswordOpen, setChangePasswordOpen }: any)
                                 <Typography className={classes.label}>Old Password:</Typography>
                                 <CustomTextField
                                     fullWidth
-                                    type={showPassword ? 'text' : 'password'}
+                                    type={showOldPassword ? 'text' : 'password'}
                                     margin="dense"
                                     variant="outlined"
                                     required
@@ -118,11 +126,11 @@ const ChangePasswordModal = ({ changePasswordOpen, setChangePasswordOpen }: any)
                                             endAdornment: (
                                                 <InputAdornment position="end">
                                                     <IconButton
-                                                        onClick={togglePasswordVisibility}
+                                                        onClick={() => togglePasswordVisibility('oldPassword')}
                                                         edge="end"
                                                         sx={{ color: 'primary.main' }}
                                                     >
-                                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                        {showOldPassword ? <VisibilityOff /> : <Visibility />}
                                                     </IconButton>
                                                 </InputAdornment>
                                             ),
@@ -135,7 +143,7 @@ const ChangePasswordModal = ({ changePasswordOpen, setChangePasswordOpen }: any)
                                 <Typography className={classes.label}>Change Password:</Typography>
                                 <CustomTextField
                                     fullWidth
-                                    type={showPassword ? 'text' : 'password'}
+                                    type={showNewPassword ? 'text' : 'password'}
                                     margin="dense"
                                     variant="outlined"
                                     required
@@ -151,11 +159,11 @@ const ChangePasswordModal = ({ changePasswordOpen, setChangePasswordOpen }: any)
                                             endAdornment: (
                                                 <InputAdornment position="end">
                                                     <IconButton
-                                                        onClick={togglePasswordVisibility}
+                                                        onClick={() => togglePasswordVisibility('password')}
                                                         edge="end"
                                                         sx={{ color: 'primary.main' }}
                                                     >
-                                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                        {showNewPassword ? <VisibilityOff /> : <Visibility />}
                                                     </IconButton>
                                                 </InputAdornment>
                                             ),
@@ -168,7 +176,7 @@ const ChangePasswordModal = ({ changePasswordOpen, setChangePasswordOpen }: any)
                                 <Typography className={classes.label}>Confirm Password:</Typography>
                                 <CustomTextField
                                     fullWidth
-                                    type={showPassword ? 'text' : 'password'}
+                                    type={showConfirmPassword ? 'text' : 'password'}
                                     margin="dense"
                                     variant="outlined"
                                     required
@@ -184,11 +192,11 @@ const ChangePasswordModal = ({ changePasswordOpen, setChangePasswordOpen }: any)
                                             endAdornment: (
                                                 <InputAdornment position="end">
                                                     <IconButton
-                                                        onClick={togglePasswordVisibility}
+                                                        onClick={() => togglePasswordVisibility('confirmPassword')}
                                                         edge="end"
                                                         sx={{ color: 'primary.main' }}
                                                     >
-                                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                                                     </IconButton>
                                                 </InputAdornment>
                                             ),
