@@ -1,0 +1,3 @@
+interface ToastMessage {
+    message : string
+}

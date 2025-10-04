@@ -1,0 +1,172 @@
+import React, { useState } from 'react';
+import {
+    Toolbar,
+    Typography,
+    IconButton,
+    Badge,
+    Avatar,
+    Box,
+    Button,
+    useMediaQuery,
+    useTheme,
+    ListItemIcon,
+    Menu,
+    MenuItem,
+} from '@mui/material';
+import {
+    Search as SearchIcon,
+    Notifications as NotificationsIcon,
+    Help as HelpIcon,
+} from '@mui/icons-material';
+import EnhancedEncryptionRoundedIcon from '@mui/icons-material/EnhancedEncryptionRounded';
+import CustomTextField from '../../custom-components/CustomTextField';
+import useHeaderStyles from './HeaderStyles';
+import HomeIcon from '@mui/icons-material/Home';
+import {
+    Logout as LogoutIcon,
+} from '@mui/icons-material';
+import CustomNotifications from '../../custom-components/CustomNotifications';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { getQueryParam } from '../../../helper/GetQueryParam';
+import ChangePasswordModal from './ChangePasswordModal';
+
+const Header = ({ searchTerm, setSearchTerm }: any) => {
+    const theme: any = useTheme();
+    const classes = useHeaderStyles();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const navigate = useNavigate()
+    const location = useLocation();
+
+    const user: any = sessionStorage.getItem('email');
+
+    const [notificationMenuAnchor, setNotificationMenuAnchor] = useState(null);
+    const [profileMenuAnchor, setProfileMenuAnchor] = useState(null);
+
+    // change password states:
+    const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+
+    const handleNotificationClick = (event: any) => {
+        setNotificationMenuAnchor(event.currentTarget);
+    };
+
+    const handleNotificationClose = () => {
+        setNotificationMenuAnchor(null);
+    };
+
+    const handleProfileClick = (event: any) => {
+        setProfileMenuAnchor(event.currentTarget);
+    };
+
+    const handleProfileClose = () => {
+        setProfileMenuAnchor(null);
+    };
+
+    const StoryIcon = () => {
+        return <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12.315 5.96234C14.145 7.79234 14.145 10.7623 12.315 12.5923C10.485 14.4223 7.515 14.4223 5.685 12.5923C3.855 10.7623 3.855 7.79234 5.685 5.96234C7.515 4.13234 10.485 4.13234 12.315 5.96234Z" fill="#19549F" />
+            <path opacity="0.4" d="M6.18777 16.7927C6.12027 16.7927 6.04527 16.7777 5.97777 16.7552C4.29027 16.0802 2.92526 14.8876 2.01026 13.3126C1.12526 11.7751 0.772768 10.0352 1.00527 8.26516C1.04277 7.95766 1.33526 7.74014 1.63526 7.77764C1.94276 7.81514 2.16026 8.10016 2.12276 8.40766C1.92776 9.92266 2.22778 11.4226 2.98528 12.7426C3.76528 14.0926 4.94276 15.1201 6.39026 15.6976C6.67526 15.8176 6.81777 16.1401 6.70527 16.4326C6.62277 16.6576 6.40527 16.7927 6.18777 16.7927Z" fill="#19549F" />
+            <path opacity="0.4" d="M4.38721 3.92203C4.22221 3.92203 4.05721 3.84704 3.94471 3.70454C3.74971 3.45704 3.79471 3.10455 4.04221 2.91705C5.47471 1.79955 7.1847 1.20703 8.9997 1.20703C10.7697 1.20703 12.4572 1.77704 13.8747 2.85704C14.1222 3.04454 14.1672 3.39703 13.9797 3.64453C13.7922 3.89203 13.4397 3.93704 13.1922 3.74954C11.9772 2.81954 10.5297 2.33203 8.9997 2.33203C7.4397 2.33203 5.9622 2.84205 4.7322 3.80205C4.6272 3.88455 4.50721 3.92203 4.38721 3.92203Z" fill="#19549F" />
+            <path opacity="0.4" d="M11.8125 16.793C11.5875 16.793 11.3775 16.6579 11.2875 16.4404C11.175 16.1554 11.31 15.8255 11.6025 15.7055C13.05 15.1205 14.2275 14.1005 15.0075 12.7505C15.7725 11.4305 16.0725 9.93043 15.87 8.41543C15.8325 8.10793 16.05 7.82295 16.3575 7.78545C16.6575 7.74795 16.95 7.96547 16.9875 8.27297C17.2125 10.0355 16.8675 11.783 15.9825 13.3205C15.075 14.8955 13.7025 16.0804 12.015 16.7629C11.955 16.7779 11.8875 16.793 11.8125 16.793Z" fill="#19549F" />
+        </svg>
+    }
+
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(event.target.value);
+    };
+
+    const handleChangePassword = () => {
+        setChangePasswordOpen(true)
+        handleProfileClose();
+    }
+
+    const isShowSearch = !isMobile
+        && (location.pathname === "/auction" || location.pathname === "/auction/lots")
+        && getQueryParam('lotId') === null;
+
+    return (
+        <Box className={classes.headerContainer}>
+            <Toolbar className={classes.toolbar}>
+                {/* Left Section - Title and Breadcrumb */}
+                <Box className={classes.leftSection}>
+                    <Typography variant="h5">Auctions</Typography>
+                    <Box className={classes.breadcrumb}>
+                        <Typography className={classes.dashboard} >
+                            <HomeIcon sx={{ mr: 0.5, fontSize: 18 }} /> Dashboard
+                        </Typography>
+                        <Typography className={classes.auction}>
+                            <StoryIcon /> Auction
+                        </Typography>
+                    </Box>
+                </Box>
+
+                <Box display="flex" flex={!isShowSearch ? 0 : 0.5}>
+                    {/* Center Section - Search Bar */}
+                    {isShowSearch &&
+                        <Box className={classes.centerSection}>
+                            <CustomTextField
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                placeholder="Search by anything"
+                                className={classes.searchField}
+                                InputProps={{
+                                    endAdornment: (
+                                        <Button className={classes.searchButton}>
+                                            <SearchIcon sx={{ color: theme.palette.primary.main3 }} />
+                                        </Button>
+                                    ),
+                                }}
+                            />
+                        </Box>
+                    }
+
+                    <Box display="flex" flex={isShowSearch ? 0.5 : 1} justifyContent="flex-end" alignItems="center">
+                        {/* Notifications Icon */}
+                        <IconButton onClick={handleNotificationClick}  >
+                            <Badge badgeContent={4} className={classes.badge}>
+                                <NotificationsIcon sx={{ height: '30px', width: '30px' }} />
+                            </Badge>
+                        </IconButton>
+                        <Menu
+                            anchorEl={notificationMenuAnchor}
+                            open={Boolean(notificationMenuAnchor)}
+                            onClose={handleNotificationClose}
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                            sx={{ '& .MuiList-root': { padding: 0 } }}
+                        >
+                            <CustomNotifications />
+                        </Menu>
+
+                        {/* User Avatar */}
+                        <IconButton onClick={handleProfileClick}>
+                            <Avatar alt={user ? JSON.parse(user).toUpperCase() : "Admin"} src="/static/images/avatar/1.jpg" className={classes.avatar} />
+                        </IconButton>
+                        <Menu
+                            anchorEl={profileMenuAnchor}
+                            open={Boolean(profileMenuAnchor)}
+                            onClose={handleProfileClose}
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                        >
+                            <MenuItem onClick={handleChangePassword} >
+                                <ListItemIcon>
+                                    <EnhancedEncryptionRoundedIcon />
+                                </ListItemIcon>
+                                <Typography variant='body1'>Change Password</Typography>
+                            </MenuItem>
+                            <MenuItem onClick={() => navigate('/logout')}>
+                                <ListItemIcon>
+                                    <LogoutIcon />
+                                </ListItemIcon>
+                                <Typography variant='body1'>Logout</Typography>
+                            </MenuItem>
+                        </Menu>
+                    </Box>
+                </Box>
+            </Toolbar >
+            <ChangePasswordModal changePasswordOpen={changePasswordOpen} setChangePasswordOpen={setChangePasswordOpen} />
+        </Box >
+    );
+};
+
+export default Header;

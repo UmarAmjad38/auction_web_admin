@@ -1,0 +1,12 @@
+RewriteEngine On
+RewriteBase /projects/parker_auctions/app/admin/
+
+# Redirect all requests to index.html (Fix React Router 404)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [QSA,L]
+
+# Ensure CSS and JS files load properly
+AddType text/javascript .js
+AddType text/css .css
+Header set Access-Control-Allow-Origin "*"
