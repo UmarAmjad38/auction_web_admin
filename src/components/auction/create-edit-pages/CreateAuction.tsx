@@ -12,7 +12,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import CustomTextField from '../../custom-components/CustomTextField';
 import { useCreateAuctionStyles } from './CreateAuctionStyles';
-import ImageUploader from '../../custom-components/ImageUploader';
+import MultipleImageUploader from '../../upload-image/MultipleImageUploader';
 import { CustomMultiLineTextField } from '../../custom-components/CustomMultiLineTextField';
 import CustomDialogue from '../../custom-components/CustomDialogue';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -21,7 +21,7 @@ import { getAuctionDetailById } from '../../Services/Methods';
 import { formatDateInput, formatTimeInput } from '../../../utils/Format';
 import { ErrorMessage } from '../../../utils/ToastMessages';
 
-const CreateAuction = ({ setIsContinue, setAuctionData, file, setFile }: any) => {
+const CreateAuction = ({ setIsContinue, setAuctionData, files, setFiles }: any) => {
     const classes = useCreateAuctionStyles();
     const today = useMemo(() => new Date().toISOString().split('T')[0], []);
     const navigate = useNavigate();
@@ -37,10 +37,10 @@ const CreateAuction = ({ setIsContinue, setAuctionData, file, setFile }: any) =>
 
     const formik = useFormik({
         initialValues: {
-            auctionId: '',
+            // auctionId: '',
             auctionName: '',
             auctionType: 'placeholder',
-            auctionImage: '',
+            auctionImage: [] as any[],
             description: '',
             liveStreaming: false,
             startDate: '',
@@ -55,10 +55,10 @@ const CreateAuction = ({ setIsContinue, setAuctionData, file, setFile }: any) =>
             auctionPreviewEndTime: '',
         },
         validationSchema: Yup.object({
-            auctionId: Yup.string().required('Auction ID is required'),
+            // auctionId: Yup.string().required('Auction ID is required'),
             auctionName: Yup.string().required('Auction Name is required'),
             auctionType: Yup.string().oneOf(['Online Auction', 'On site Auction']).required('Auction Type is required'), // Added validation for the dropdown options
-            auctionImage: Yup.mixed().required('Auction Image is required'),
+            auctionImage: Yup.array().of(Yup.mixed()).min(1, 'At least one image is required').required('Auction Image is required'),
             description: Yup.string().max(500).required('Description is required'),
             startDate: Yup.date().required('Start Date is required'),
             startTime: Yup.string().required('Start Time is required'),
@@ -108,10 +108,10 @@ const CreateAuction = ({ setIsContinue, setAuctionData, file, setFile }: any) =>
                     const auction = response.data.Auction;
                     if (auction) {
                         const formattedAuctionDetails = {
-                            auctionId: auction.Id || '',
+                            // auctionId: auction.Id || '',
                             auctionName: auction.Name || '',
                             auctionType: auction.Type,
-                            auctionImage: auction.Image || '',
+                            auctionImage: auction.Image ? [auction.Image] : [],
                             description: auction.Description || '',
                             liveStreaming: auction.LiveStreaming || false,
                             startDate: auction.StartDate ? formatDateInput(auction.StartDate) : '',
@@ -132,15 +132,8 @@ const CreateAuction = ({ setIsContinue, setAuctionData, file, setFile }: any) =>
                         // Populate formik fields
                         formik.setValues(formattedAuctionDetails);
 
-                        // POPULATE IMAGE::
-
-                        // console.log(typeof auction.Image, ' image: ', auction.Image)
-
-                        // Handle populate image 
-                        // if (typeof auction.Image === 'string' && auction.Image.startsWith('http')) {
-                        //     setFile(auction.Image);
-                        // } else {
-                        // }
+                        // POPULATE IMAGES::
+                        setFiles(formattedAuctionDetails.auctionImage);
 
                     } else {
                         ErrorMessage('Auction data not found');
@@ -157,7 +150,7 @@ const CreateAuction = ({ setIsContinue, setAuctionData, file, setFile }: any) =>
 
 
     useEffect(() => {
-        if (!file) {
+        if (!files || files.length === 0) {
             const errorElement: any = document.getElementById(`uploader-error`);
             if (errorElement) {
                 errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -186,7 +179,7 @@ const CreateAuction = ({ setIsContinue, setAuctionData, file, setFile }: any) =>
                     {/* First Portion */}
                     <Box sx={{ padding: 3, marginBottom: 3, border: '1px solid #E2E8F0', borderRadius: "20px" }}>
                         <Box display="flex" gap={2} mb={2} justifyContent={'space-between'}>
-                            <Box flex={1}>
+                            {/* <Box flex={1}>
                                 <Typography className={classes.label}>
                                     Auction ID
                                 </Typography>
@@ -199,7 +192,7 @@ const CreateAuction = ({ setIsContinue, setAuctionData, file, setFile }: any) =>
                                     error={formik.touched.auctionId && Boolean(formik.errors.auctionId)}
                                     helperText={formik.touched.auctionId && formik.errors.auctionId}
                                 />
-                            </Box>
+                            </Box> */}
                             <Box flex={1} mx={2}>
                                 <Typography className={classes.label}>
                                     Auction Name
@@ -244,15 +237,15 @@ const CreateAuction = ({ setIsContinue, setAuctionData, file, setFile }: any) =>
                             <Typography className={classes.label}>
                                 Upload Auction Image
                             </Typography>
-                            <ImageUploader
-                                file={file}
-                                setFile={(uploadedFile: any) => {
-                                    setFile(uploadedFile); // Update local state
-                                    formik.setFieldValue('auctionImage', uploadedFile); // Update Formik state
+                            <MultipleImageUploader
+                                files={files}
+                                setFiles={(uploadedFiles: any) => {
+                                    setFiles(uploadedFiles); // Update local state
+                                    formik.setFieldValue('auctionImage', uploadedFiles); // Update Formik state
                                 }} />
                             {formik.touched.auctionImage && formik.errors.auctionImage && (
                                 <Typography color="error" variant="body2" id="uploader-error">
-                                    {formik.errors.auctionImage}
+                                    {formik.errors.auctionImage as string}
                                 </Typography>
                             )}
                         </Box>

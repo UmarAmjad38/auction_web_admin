@@ -6,7 +6,7 @@ import CustomTextField from '../../custom-components/CustomTextField';
 import { CustomMultiLineTextField } from '../../custom-components/CustomMultiLineTextField';
 import ImageUploader from '../../custom-components/ImageUploader';
 import { useCreateAuctionStyles } from './CreateAuctionStyles';
-import { createLot, editLot, editLotImage, getAuctionDetailById, getLotDetailsById } from '../../Services/Methods';
+import { createLot, editLot, editLotImage, getAuctionDetailById, getLotDetailsById, getInventoryLots } from '../../Services/Methods';
 import { SuccessMessage, ErrorMessage } from '../../../utils/ToastMessages';
 import { convertTo24HourFormat, formatDate, formatDateInput, formatTime, formatTimeInput } from '../../../utils/Format';
 import BidsRange from '../auction-components/BidsRange';
@@ -17,7 +17,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 // redux imports
 import { getQueryParam } from '../../../helper/GetQueryParam';
 import { createRoom } from '../../../utils/SocektMethods';
-import MultipleImageUploader from '../../custom-components/MultipleImageUploader';
+import MultipleImageUploader from '../../upload-image/MultipleImageUploader';
 
 // Define the type of categories object
 type CategoryType = {
@@ -88,6 +88,23 @@ const AddLot = ({ socket }: any) => {
         }
     }, []);
 
+    useEffect(() => {
+        if (!isEdit) {
+            const fetchHighestLotNumber = async () => {
+                try {
+                    const lotsResponse = await getInventoryLots();
+                    const lots = lotsResponse.data || [];
+                    const maxLotNo = lots.length > 0 ? Math.max(...lots.map((lot: any) => parseInt(lot.LotNo) || 0)) : 0;
+                    const nextLotNumber = maxLotNo + 1;
+                    formik.setFieldValue('lotNumber', nextLotNumber.toString());
+                } catch (error) {
+                    console.error('Error fetching lots:', error);
+                }
+            };
+            fetchHighestLotNumber();
+        }
+    }, [isEdit]);
+
     const youtubeRegex =
         /(?:youtube\.com\/(?:watch\?v=|embed\/|live\/|v\/|e\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
 
@@ -98,7 +115,7 @@ const AddLot = ({ socket }: any) => {
 
     const formik = useFormik({
         initialValues: {
-            orderNumber: '',
+            // orderNumber: '',
             lotNumber: '',
             category: 'placeholder',
             subCategory: 'placeholder',
@@ -109,13 +126,13 @@ const AddLot = ({ socket }: any) => {
             endDate: '',
             endTime: '',
             internalNotes: '',
-            auctionImage: '',
+            auctionImage: [] as any[],
             bidsRange: [{ startAmount: '', endAmount: '', bidRangeAmount: '' }],
             youtubeUrl: '',
             isYoutube: true
         },
         validationSchema: Yup.object({
-            orderNumber: Yup.string().required('Order Number is required'),
+            // orderNumber: Yup.string().required('Order Number is required'),
             lotNumber: Yup.string().required('Lot Number is required'),
             category: Yup.string().required('Category is required'),
             subCategory: Yup.string().required('Sub-Category is required'),
@@ -220,7 +237,7 @@ const AddLot = ({ socket }: any) => {
                         return true;
                     }
                 ),
-            auctionImage: Yup.mixed().required('Auction Image is required'),
+            auctionImage: Yup.array().of(Yup.mixed()).min(1, 'At least one image is required').required('Auction Image is required'),
             internalNotes: Yup.string(),
             isYoutube: Yup.boolean().default(false),
             // youtubeUrl: Yup.string().transform((value) => (value === "" ? null : value)).nullable()
@@ -229,7 +246,7 @@ const AddLot = ({ socket }: any) => {
             if (!isEdit) {
                 const newLot = {
                     Id: lots.length + 1,
-                    OrderNo: values.orderNumber,
+                    // OrderNo: values.orderNumber,
                     LotNo: values.lotNumber,
                     Image: "example.jpg",
                     Category: values.category,
@@ -259,7 +276,7 @@ const AddLot = ({ socket }: any) => {
             } else {
                 const edittedLot = {
                     Id: getQueryParam('lotId'),
-                    OrderNo: values.orderNumber,
+                    // OrderNo: values.orderNumber,
                     LotNo: values.lotNumber,
                     Image: "example.jpg",
                     Category: values.category,
@@ -307,7 +324,7 @@ const AddLot = ({ socket }: any) => {
 
                     if (lot) {
                         const formattedLot: any = {
-                            orderNumber: lot.OrderNo,
+                            // orderNumber: lot.OrderNo,
                             lotNumber: lot.LotNo,
                             category: lot.Category,
                             subCategory: lot.SubCategory,
@@ -319,10 +336,11 @@ const AddLot = ({ socket }: any) => {
                             endTime: formatTimeInput(lot.EndTime),
                             internalNotes: lot.InternalNotes || '',
                             youtubeUrl: lot.YoutubeUrl || "",
-                            auctionImage: lot.Image,
+                            auctionImage: images || [],
                             bidsRange: bidsRange,
                             isYoutube: lot.IsYoutube
                         };
+                        setFiles(images || []);
                         setSelectedCategory(formattedLot.category);
                         setSubCategories(categories[formattedLot.category]); // Update subcategories
                         // Populate formik fields
@@ -502,7 +520,7 @@ const AddLot = ({ socket }: any) => {
                 <Box sx={{ padding: 3, marginBottom: 3, border: '1px solid #E2E8F0', borderRadius: "20px" }}>
 
                     <Box display="flex" gap={2} mb={2} justifyContent={'space-between'}>
-                        <Box flex={1}>
+                        {/* <Box flex={1}>
                             <Typography className={classes.label}>
                                 Order Number
                             </Typography>
@@ -514,7 +532,7 @@ const AddLot = ({ socket }: any) => {
                                 error={formik.touched.orderNumber && Boolean(formik.errors.orderNumber)}
                                 helperText={formik.touched.orderNumber && formik.errors.orderNumber}
                             />
-                        </Box>
+                        </Box> */}
                         <Box flex={1} mx={2}>
                             <Typography className={classes.label}>
                                 Lot Number
@@ -523,7 +541,8 @@ const AddLot = ({ socket }: any) => {
                                 name="lotNumber"
                                 placeholder="Lot Number"
                                 value={formik.values.lotNumber}
-                                onChange={formik.handleChange}
+                                // onChange={formik.handleChange}
+                                disabled
                                 error={formik.touched.lotNumber && Boolean(formik.errors.lotNumber)}
                                 helperText={formik.touched.lotNumber && formik.errors.lotNumber}
                             />
@@ -668,12 +687,13 @@ const AddLot = ({ socket }: any) => {
                         />
                     </Box>
                     <MultipleImageUploader
+                        files={files}
                         setFiles={(uploadedFiles: any) => {
                             setFiles(uploadedFiles); // Update local state
                             formik.setFieldValue('auctionImage', uploadedFiles); // Update Formik state
                         }}
                     />
-                    {formik.touched.auctionImage && formik.errors.auctionImage && (
+                    {formik.touched.auctionImage && formik.errors.auctionImage && typeof formik.errors.auctionImage === 'string' && (
                         <Typography color="error" variant="body2">
                             {formik.errors.auctionImage}
                         </Typography>

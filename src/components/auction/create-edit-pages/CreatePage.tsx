@@ -20,7 +20,8 @@ const CreatePage = ({ type }: any) => {
     const [isUpdated, setIsUpdated] = useState(false);
     const [isSubmittedByLot, setIsSubmittedByLot] = useState(false);
     const [isContinue, setIsContinue] = useState(false);
-    const [file, setFile]: any = useState(null);
+    // const [file, setFile]: any = useState(null);
+    const [files, setFiles]: any = useState([]);
     const [navigation, setNavigation] = useState("");
     const isLiveAuction = localStorage.getItem("isLive");
 
@@ -116,10 +117,14 @@ const CreatePage = ({ type }: any) => {
     const createNewAuction = async (payload: any) => {
         const formData = new FormData();
         formData.append("payload", JSON.stringify(payload));
-        if (file) {
-            formData.append("file", file);
-            formData.append("file", file);
-            setFile(null)
+        // if (file) {
+        //     formData.append("file", file);
+        //     formData.append("file", file);
+        //     setFile(null)
+        // }
+        if (files && files.length > 0) {
+            files.forEach((f: any) => formData.append("file", f));
+            setFiles([])
         }
 
         createAuction(formData).then((response) => {
@@ -146,9 +151,13 @@ const CreatePage = ({ type }: any) => {
     const updateAuction = async (payload: any) => {
         const formData = new FormData();
         formData.append("payload", JSON.stringify(payload));
-        if (file) {
-            formData.append("file", file);
-            setFile(null)
+        // if (file) {
+        //     formData.append("file", file);
+        //     setFile(null)
+        // }
+        if (files && files.length > 0) {
+            files.forEach((f: any) => formData.append("file", f));
+            setFiles([])
         }
         editAuction(formData).then((response) => {
 
@@ -184,8 +193,10 @@ const CreatePage = ({ type }: any) => {
                 />
             ) : (
                 <CreateAuction
-                    file={file}
-                    setFile={setFile}
+                    // file={file}
+                    // setFile={setFile}
+                    files={files}
+                    setFiles={setFiles}
                     setIsContinue={setIsContinue}
                     setAuctionData={setAuctionData}
                 />
