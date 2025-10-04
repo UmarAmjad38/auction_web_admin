@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Typography, Button, MenuItem, Switch } from '@mui/material';
+import { Box, Typography, Button, MenuItem, Switch, InputAdornment } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import CustomTextField from '../../custom-components/CustomTextField';
@@ -120,6 +120,7 @@ const AddLot = ({ socket }: any) => {
             category: 'placeholder',
             subCategory: 'placeholder',
             lead: '',
+            reserveAmount: '',
             description: '',
             startDate: '',
             startTime: '',
@@ -137,6 +138,7 @@ const AddLot = ({ socket }: any) => {
             category: Yup.string().required('Category is required'),
             subCategory: Yup.string().required('Sub-Category is required'),
             lead: Yup.string().required('Lead is required'),
+            reserveAmount: Yup.number().required('Reserve Amount is required').typeError('Reserve Amount must be a number'),
             bidsRange: Yup.array()
                 .of(
                     Yup.object().shape({
@@ -252,6 +254,7 @@ const AddLot = ({ socket }: any) => {
                     Category: values.category,
                     SubCategory: values.subCategory,
                     ShortDescription: values.lead,
+                    ReserveAmount: values.reserveAmount,
                     LongDescription: values.description,
                     BidStartAmount: values.bidsRange[0]?.startAmount,
                     StartDate: formatDate(values.startDate),
@@ -282,6 +285,7 @@ const AddLot = ({ socket }: any) => {
                     Category: values.category,
                     SubCategory: values.subCategory,
                     ShortDescription: values.lead,
+                    ReserveAmount: values.reserveAmount,
                     LongDescription: values.description,
                     BidStartAmount: values.bidsRange[0]?.startAmount,
                     StartDate: formatDate(values.startDate),
@@ -329,6 +333,7 @@ const AddLot = ({ socket }: any) => {
                             category: lot.Category,
                             subCategory: lot.SubCategory,
                             lead: lot.ShortDescription,
+                            reserveAmount: lot.ReserveAmount || '',
                             description: lot.LongDescription,
                             startDate: formatDateInput(lot.StartDate),
                             startTime: formatTimeInput(lot.StartTime),
@@ -571,8 +576,8 @@ const AddLot = ({ socket }: any) => {
                         </Box>
                     </Box>
 
-                    <Box display="flex" gap={2} mb={3} justifyContent={'space-between'}>
-                        <Box flex={0.479}>
+                    <Box display="flex" gap={4} mb={3}>
+                        <Box flex={1}>
                             <Typography className={classes.label}>
                                 Sub-Category
                             </Typography>
@@ -595,7 +600,7 @@ const AddLot = ({ socket }: any) => {
                                 ))}
                             </CustomTextField>
                         </Box>
-                        <Box flex={1} ml={2}>
+                        <Box flex={1}>
                             <Typography className={classes.label}>
                                 Lead
                             </Typography>
@@ -606,6 +611,23 @@ const AddLot = ({ socket }: any) => {
                                 onChange={formik.handleChange}
                                 error={formik.touched.lead && Boolean(formik.errors.lead)}
                                 helperText={formik.touched.lead && formik.errors.lead}
+                            />
+                        </Box>
+                        <Box flex={1}>
+                            <Typography className={classes.label}>
+                                Reserve Amount
+                            </Typography>
+                            <CustomTextField
+                                name="reserveAmount"
+                                type="number"
+                                placeholder="Reserve Amount"
+                                value={formik.values.reserveAmount}
+                                onChange={formik.handleChange}
+                                error={formik.touched.reserveAmount && Boolean(formik.errors.reserveAmount)}
+                                helperText={formik.touched.reserveAmount && formik.errors.reserveAmount}
+                                InputProps={{
+                                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                                }}
                             />
                         </Box>
                     </Box>
