@@ -84,19 +84,21 @@ const MultipleImageUploader = ({ files, setFiles }: { files: any[], setFiles: (f
                     {files.map((file, index) => (
                         <Paper key={index} sx={{ position: 'relative', p: 1, borderRadius: 2 }}>
                             <img
-                                src={URL.createObjectURL(file)}
+                                src={typeof file === 'string' ? file : URL.createObjectURL(file)}
                                 alt={`Preview ${index + 1}`}
                                 style={{ width: '160px', height: '120px', objectFit: 'cover' }}
                             />
-                            <Typography variant="caption" display="block">
-                                Size: {formatSize(file.size)}
-                            </Typography>
+                            {typeof file !== 'string' && (
+                                <Typography variant="caption" display="block">
+                                    Size: {formatSize(file.size)}
+                                </Typography>
+                            )}
                             <IconButton
                                 size="small"
                                 onClick={() => removeFile(index)}
                                 sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'rgba(255,255,255,0.7)' }}
                             >
-                                <DeleteIcon fontSize="small" />
+                                <DeleteIcon fontSize="small" sx={{ color: 'red' }} />
                             </IconButton>
                         </Paper>
                     ))}

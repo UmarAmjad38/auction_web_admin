@@ -345,7 +345,12 @@ const AddLot = ({ socket }: any) => {
                             bidsRange: bidsRange,
                             isYoutube: lot.IsYoutube
                         };
-                        setFiles(images || []);
+                        // Include main lot image URL in files array if not already present
+                        const initialFiles = images && images.length > 0 ? images : [];
+                        if (lot.Image && !initialFiles.includes(lot.Image)) {
+                            initialFiles.unshift(lot.Image);
+                        }
+                        setFiles(initialFiles);
                         setSelectedCategory(formattedLot.category);
                         setSubCategories(categories[formattedLot.category]); // Update subcategories
                         // Populate formik fields

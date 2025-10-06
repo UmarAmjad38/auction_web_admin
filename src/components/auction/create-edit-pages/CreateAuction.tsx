@@ -12,7 +12,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import CustomTextField from '../../custom-components/CustomTextField';
 import { useCreateAuctionStyles } from './CreateAuctionStyles';
-import MultipleImageUploader from '../../upload-image/MultipleImageUploader';
+import ImageUploader from '../../custom-components/ImageUploader';
 import { CustomMultiLineTextField } from '../../custom-components/CustomMultiLineTextField';
 import CustomDialogue from '../../custom-components/CustomDialogue';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -36,61 +36,61 @@ const CreateAuction = ({ setIsContinue, setAuctionData, files, setFiles }: any) 
     const [isFetchingData, setIsFetchingData] = useState(false);
 
     const formik = useFormik({
-        initialValues: {
-            // auctionId: '',
-            auctionName: '',
-            auctionType: 'placeholder',
-            auctionImage: [] as any[],
-            description: '',
-            liveStreaming: false,
-            startDate: '',
-            startTime: '',
-            endDate: '',
-            endTime: '',
-            checkoutDate: '',
-            checkoutTime: '',
-            auctionPreviewStartDate: '',
-            auctionPreviewStartTime: '',
-            auctionPreviewEndDate: '',
-            auctionPreviewEndTime: '',
-        },
-        validationSchema: Yup.object({
-            // auctionId: Yup.string().required('Auction ID is required'),
-            auctionName: Yup.string().required('Auction Name is required'),
-            auctionType: Yup.string().oneOf(['Online Auction', 'On site Auction']).required('Auction Type is required'), // Added validation for the dropdown options
-            auctionImage: Yup.array().of(Yup.mixed()).min(1, 'At least one image is required').required('Auction Image is required'),
-            description: Yup.string().max(500).required('Description is required'),
-            startDate: Yup.date().required('Start Date is required'),
-            startTime: Yup.string().required('Start Time is required'),
-            endDate: Yup.date()
-                .required('End Date is required')
-                .test('is-greater-or-equal', 'End Date must be greater than or equal to Start Date', function (value) {
-                    return value && this.parent.startDate ? value >= this.parent.startDate : true;
-                }),
-            endTime: Yup.string().required('End Time is required'),
-            checkoutDate: Yup.date()
-                .required('Checkout Date is required')
-                .test('is-greater-or-equal', 'Checkout Date must be greater or equal to End Date', function (value) {
-                    return value && this.parent.endDate ? value >= this.parent.endDate : true;
-                }),
-            checkoutTime: Yup.string().required('Checkout Time is required'),
-            auctionPreviewStartDate: Yup.date()
-                .required('Preview Start Date is required')
-                .test('is-between', 'Preview Start Date must be between Start and End Date', function (value) {
-                    return value && this.parent.startDate && this.parent.endDate
-                        ? value >= this.parent.startDate && value <= this.parent.endDate
-                        : true;
-                }),
-            auctionPreviewStartTime: Yup.string().required('Preview Start Time is required'),
-            auctionPreviewEndDate: Yup.date()
-                .required('Preview End Date is required')
-                .test('is-between', 'Preview End Date must be between Start and End Date', function (value) {
-                    return value && this.parent.startDate && this.parent.endDate
-                        ? value >= this.parent.startDate && value <= this.parent.endDate
-                        : true;
-                }),
-            auctionPreviewEndTime: Yup.string().required('Preview End Time is required'),
-        }),
+            initialValues: {
+                // auctionId: '',
+                auctionName: '',
+                auctionType: 'placeholder',
+                auctionImage: null as any,
+                description: '',
+                liveStreaming: false,
+                startDate: '',
+                startTime: '',
+                endDate: '',
+                endTime: '',
+                checkoutDate: '',
+                checkoutTime: '',
+                auctionPreviewStartDate: '',
+                auctionPreviewStartTime: '',
+                auctionPreviewEndDate: '',
+                auctionPreviewEndTime: '',
+            },
+            validationSchema: Yup.object({
+                // auctionId: Yup.string().required('Auction ID is required'),
+                auctionName: Yup.string().required('Auction Name is required'),
+                auctionType: Yup.string().oneOf(['Online Auction', 'On site Auction']).required('Auction Type is required'), // Added validation for the dropdown options
+                auctionImage: Yup.mixed().required('Auction Image is required'),
+                description: Yup.string().max(500).required('Description is required'),
+                startDate: Yup.date().required('Start Date is required'),
+                startTime: Yup.string().required('Start Time is required'),
+                endDate: Yup.date()
+                    .required('End Date is required')
+                    .test('is-greater-or-equal', 'End Date must be greater than or equal to Start Date', function (value) {
+                        return value && this.parent.startDate ? value >= this.parent.startDate : true;
+                    }),
+                endTime: Yup.string().required('End Time is required'),
+                checkoutDate: Yup.date()
+                    .required('Checkout Date is required')
+                    .test('is-greater-or-equal', 'Checkout Date must be greater or equal to End Date', function (value) {
+                        return value && this.parent.endDate ? value >= this.parent.endDate : true;
+                    }),
+                checkoutTime: Yup.string().required('Checkout Time is required'),
+                auctionPreviewStartDate: Yup.date()
+                    .required('Preview Start Date is required')
+                    .test('is-between', 'Preview Start Date must be between Start and End Date', function (value) {
+                        return value && this.parent.startDate && this.parent.endDate
+                            ? value >= this.parent.startDate && value <= this.parent.endDate
+                            : true;
+                    }),
+                auctionPreviewStartTime: Yup.string().required('Preview Start Time is required'),
+                auctionPreviewEndDate: Yup.date()
+                    .required('Preview End Date is required')
+                    .test('is-between', 'Preview End Date must be between Start and End Date', function (value) {
+                        return value && this.parent.startDate && this.parent.endDate
+                            ? value >= this.parent.startDate && value <= this.parent.endDate
+                            : true;
+                    }),
+                auctionPreviewEndTime: Yup.string().required('Preview End Time is required'),
+            }),
         onSubmit: (values) => {
             setAuctionData(values);
             setIsContinue(true)
@@ -111,7 +111,7 @@ const CreateAuction = ({ setIsContinue, setAuctionData, files, setFiles }: any) 
                             // auctionId: auction.Id || '',
                             auctionName: auction.Name || '',
                             auctionType: auction.Type,
-                            auctionImage: auction.Image ? [auction.Image] : [],
+                            auctionImage: auction.Image || null,
                             description: auction.Description || '',
                             liveStreaming: auction.LiveStreaming || false,
                             startDate: auction.StartDate ? formatDateInput(auction.StartDate) : '',
@@ -133,7 +133,7 @@ const CreateAuction = ({ setIsContinue, setAuctionData, files, setFiles }: any) 
                         formik.setValues(formattedAuctionDetails);
 
                         // POPULATE IMAGES::
-                        setFiles(formattedAuctionDetails.auctionImage);
+                        setFiles(auction.Image ? [auction.Image] : []);
 
                     } else {
                         ErrorMessage('Auction data not found');
@@ -237,11 +237,11 @@ const CreateAuction = ({ setIsContinue, setAuctionData, files, setFiles }: any) 
                             <Typography className={classes.label}>
                                 Upload Auction Image
                             </Typography>
-                            <MultipleImageUploader
-                                files={files}
-                                setFiles={(uploadedFiles: any) => {
-                                    setFiles(uploadedFiles); // Update local state
-                                    formik.setFieldValue('auctionImage', uploadedFiles); // Update Formik state
+                            <ImageUploader
+                                file={files[0] || null}
+                                setFile={(uploadedFile: any) => {
+                                    setFiles(uploadedFile ? [uploadedFile] : []); // Update local state as array
+                                    formik.setFieldValue('auctionImage', uploadedFile); // Update Formik state as single file
                                 }} />
                             {formik.touched.auctionImage && formik.errors.auctionImage && (
                                 <Typography color="error" variant="body2" id="uploader-error">
