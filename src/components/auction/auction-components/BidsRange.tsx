@@ -13,7 +13,7 @@ const BidsRange = ({ formik }: any) => {
 
         formik.setFieldValue('bidsRange', [
             ...formik.values.bidsRange,
-            { startAmount: newStartAmount, endAmount: '', bidRangeAmount: '' },
+            { id: 0, startAmount: newStartAmount, endAmount: '', bidRangeAmount: '' },
         ]);
     };
 

@@ -104,6 +104,11 @@ const Lots = ({ searchTerm }: any) => {
             const response = await getInventoryLots();
 
             if (response.data && response.data.length > 0) {
+                // Log raw API data for first item to debug IsPast
+                if (response.data.length > 0) {
+                    console.log('Raw Inventory API data for first lot:', response.data[0]);
+                }
+
                 const updatedData = response.data.map((item: any) => ({
                     id: item.Id,
                     auctionId: item.AuctionId,
@@ -117,6 +122,7 @@ const Lots = ({ searchTerm }: any) => {
                     highestBid: item.BidStartAmount,
                     sold: item.IsSold,
                     isPast: item.IsPast,
+                    isMoved: item.IsMoved,
                     isFeatured: item.IsFeatured,
                     isLive: item.IsLive,
                     cityId: item.CityId,
@@ -283,15 +289,15 @@ const Lots = ({ searchTerm }: any) => {
                                                 auction.details.location.toLowerCase().includes(lowerCaseTerm) // Match Location
                                             );
                                         }).map((lot: any) => (
-                                            <Grid item xs={12} sm={6} md={4} xl={3} key={lot.id}>
-                                                <AuctionCard
-                                                    headerType={"lots"}
-                                                    cardData={lot}
-                                                    handleEdit={handleEdit}
-                                                    handleDelete={() => handleDeleteLot(lot.id)}
-                                                    handleMoveModal={handleMoveModal}
-                                                />
-                                            </Grid>
+                                        <Grid item xs={12} sm={6} md={4} xl={3} key={lot.id}>
+                                            <AuctionCard
+                                                headerType={"inventory"}
+                                                cardData={lot}
+                                                handleEdit={handleEdit}
+                                                handleDelete={() => handleDeleteLot(lot.id)}
+                                                handleMoveModal={handleMoveModal}
+                                            />
+                                        </Grid>
                                         ))}
                                 </Grid>
                             </Container>

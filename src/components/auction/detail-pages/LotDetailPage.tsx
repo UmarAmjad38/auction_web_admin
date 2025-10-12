@@ -120,7 +120,7 @@ const LotDetailPage = () => {
                     id: bidder.Id,
                     clientId: bidder.ClientId,
                     name: bidder.Name,
-                    bidAmount: bidder.BidAmount,
+                    bidAmount: bidder.Amount,
                     email: bidder.Email,
                     address: bidder.Address,
                     company: bidder.Company,
@@ -145,15 +145,13 @@ const LotDetailPage = () => {
                 image: winnerDetails.Lots?.Image || `${process.env.PUBLIC_URL}/assets/pngs/winner.png`,
             };
 
-            if (winner.name) {
+            if (formattedWinner.name) {
                 setWinner(formattedWinner);
             } else {
                 setWinner({});
-
             }
         } catch (err) {
             setWinner({});
-            // setWinner({});
         }
     };
 

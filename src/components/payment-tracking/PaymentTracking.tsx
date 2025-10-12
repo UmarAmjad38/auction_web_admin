@@ -5,7 +5,7 @@ import { getPaidInvoices, getPendingInvoices, invoiceReminder } from "../Service
 import NoRecordFound from "../../utils/NoRecordFound";
 import PaymentViewModal from "./PaymentViewModal";
 import theme from "../../theme";
-import { ErrorMessage } from "../../utils/ToastMessages";
+import { ErrorMessage, SuccessMessage } from "../../utils/ToastMessages";
 
 const PaymentTracking = () => {
     const classes = usePaymentTrackingStyles();
@@ -16,7 +16,7 @@ const PaymentTracking = () => {
     const [page, setPage] = useState<number>(0);
     const [selectedInvoice, setSelectedInvoice] = useState({});
     const [paidInvoice, setPaidInvoice] = useState<boolean>(false);
-    const [isReminding, setIsReminding] = useState<boolean>(false);
+    const [remindingInvoices, setRemindingInvoices] = useState<Set<string>>(new Set());
     const [viewDetails, setViewDetails] = useState(false);
     const rowsPerPage = 10;
 
@@ -79,19 +79,22 @@ const PaymentTracking = () => {
         return `${month}-${day}-${year}`;
     };
 
-    const handleInvoiceReminder = async (payload: any) => {
-
-        setIsReminding(true)
+    const handleInvoiceReminder = async (invoiceId: string, payload: any) => {
+        setRemindingInvoices(prev => new Set(prev).add(invoiceId));
 
         try {
             const response = await invoiceReminder(payload);
             if (response) {
-                console.log(response)
+                SuccessMessage(`Invoice Reminder has been sent to: ${payload.Email}`)
             }
         } catch (error) {
             ErrorMessage('Failed to send reminder')
         } finally {
-            setIsReminding(false)
+            setRemindingInvoices(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(invoiceId);
+                return newSet;
+            });
         }
     }
 
@@ -164,9 +167,9 @@ const PaymentTracking = () => {
                                             <Button
                                                 variant={'contained'}
                                                 className={`${classes.status} ${'active'}`}
-                                                onClick={() => handleInvoiceReminder({ Email: 'parkerauction369@gmail.com', Amount: row.amount, DueDate: formatDate(row.deadline) })}
+                                                onClick={() => handleInvoiceReminder(row.invoiceId, { Email: row.email, Amount: row.amount, DueDate: formatDate(row.deadline) })}
                                             >
-                                                {isReminding ? <CircularProgress size={25} sx={{ color: theme.palette.primary.main3 }} /> : 'Remember'}
+                                                {remindingInvoices.has(row.invoiceId) ? <CircularProgress size={25} sx={{ color: theme.palette.primary.main3 }} /> : 'Remember'}
                                             </Button>
                                         </TableCell>
                                     }

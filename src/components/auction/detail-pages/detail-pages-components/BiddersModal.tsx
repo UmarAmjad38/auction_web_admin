@@ -77,14 +77,14 @@ const BiddersModal = ({ open, onClose, bidders }: any) => {
                                                 {bidder.address}
                                             </Typography>
                                         </Box>
-                                        <Box className={classes.detail}>
+                                        {/* <Box className={classes.detail}>
                                             <Typography className={classes.bidderHeading}>
                                                 Company
                                             </Typography>
                                             <Typography className={classes.bidderValue}>
                                                 {bidder.company}
                                             </Typography>
-                                        </Box>
+                                        </Box> */}
                                     </Box>
                                 </Box>
                             ))}

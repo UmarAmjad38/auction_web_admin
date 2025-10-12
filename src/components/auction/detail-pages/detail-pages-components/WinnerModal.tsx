@@ -39,10 +39,10 @@ const WinnerModal = ({ open, onClose, winner }: any) => {
                                         <EmailIcon className={classes.icon} />
                                         <Typography className={classes.infoText}>{winner.email}</Typography>
                                     </Box>
-                                    <Box display="flex" alignItems="center">
+                                    {/* <Box display="flex" alignItems="center">
                                         <PhoneIcon className={classes.icon} />
                                         <Typography className={classes.infoText}>{winner.phone}</Typography>
-                                    </Box>
+                                    </Box> */}
                                 </Box>
 
                                 <Box display="flex" alignItems="start">

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// ...existing code...
+import React, { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Box, Typography, Button, Paper, IconButton } from '@mui/material';
 import theme from '../../theme';
@@ -6,7 +7,7 @@ import PublishRoundedIcon from '@mui/icons-material/PublishRounded';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { ErrorMessage } from '../../utils/ToastMessages';
 
-const MultipleImageUploader = ({ files, setFiles }: { files: any[], setFiles: (files: any[]) => void }) => {
+const MultipleImageUploader = ({ files, setFiles, onRemove }: { files: any[], setFiles: (files: any[]) => void, onRemove?: (file: any) => void }) => {
     const [borderColor, setBorderColor] = useState(theme.palette.primary.main4);
 
     const onDrop = (acceptedFiles: File[]) => {
@@ -24,6 +25,10 @@ const MultipleImageUploader = ({ files, setFiles }: { files: any[], setFiles: (f
                 return false;
             }
             return true;
+        }).map(file => {
+            // create a preview url once and attach to file object to avoid calling createObjectURL repeatedly
+            // it's safe to add a `preview` property to File in browser environments
+            return Object.assign(file, { preview: URL.createObjectURL(file) });
         });
 
         setFiles([...files, ...validFiles]);
@@ -38,6 +43,12 @@ const MultipleImageUploader = ({ files, setFiles }: { files: any[], setFiles: (f
     });
 
     const removeFile = (index: number) => {
+        const fileToRemove = files[index];
+        if (onRemove) onRemove(fileToRemove);
+        // revoke object URL if created
+        if (fileToRemove && typeof fileToRemove !== 'string' && (fileToRemove as any).preview) {
+            try { URL.revokeObjectURL((fileToRemove as any).preview); } catch { /* ignore */ }
+        }
         const newFiles = files.filter((_, i) => i !== index);
         setFiles(newFiles);
     };
@@ -48,6 +59,18 @@ const MultipleImageUploader = ({ files, setFiles }: { files: any[], setFiles: (f
         }
         return (size / 1024).toFixed(2) + ' KB';
     };
+
+    // cleanup all created object URLs on unmount to avoid memory leaks
+    useEffect(() => {
+        return () => {
+            files.forEach(f => {
+                if (f && typeof f !== 'string' && (f as any).preview) {
+                    try { URL.revokeObjectURL((f as any).preview); } catch { /* ignore */ }
+                }
+            });
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <Box>
@@ -81,27 +104,34 @@ const MultipleImageUploader = ({ files, setFiles }: { files: any[], setFiles: (f
             </Box>
             {files.length > 0 && (
                 <Box mt={2} display="flex" flexWrap="wrap" gap={2}>
-                    {files.map((file, index) => (
-                        <Paper key={index} sx={{ position: 'relative', p: 1, borderRadius: 2 }}>
-                            <img
-                                src={typeof file === 'string' ? file : URL.createObjectURL(file)}
-                                alt={`Preview ${index + 1}`}
-                                style={{ width: '160px', height: '120px', objectFit: 'cover' }}
-                            />
-                            {typeof file !== 'string' && (
-                                <Typography variant="caption" display="block">
-                                    Size: {formatSize(file.size)}
-                                </Typography>
-                            )}
-                            <IconButton
-                                size="small"
-                                onClick={() => removeFile(index)}
-                                sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'rgba(255,255,255,0.7)' }}
-                            >
-                                <DeleteIcon fontSize="small" sx={{ color: 'red' }} />
-                            </IconButton>
-                        </Paper>
-                    ))}
+                    {files.map((file, index) => {
+                        // determine preview source safely
+                        const src = typeof file === 'string'
+                            ? file
+                            : (file as any).preview || (file as any).url || (file as any).path || '';
+
+                        return (
+                            <Paper key={index} sx={{ position: 'relative', p: 1, borderRadius: 2 }}>
+                                <img
+                                    src={src}
+                                    alt={`Preview ${index + 1}`}
+                                    style={{ width: '160px', height: '120px', objectFit: 'cover' }}
+                                />
+                                {typeof file !== 'string' && (file as any).size && (
+                                    <Typography variant="caption" display="block">
+                                        Size: {formatSize((file as any).size)}
+                                    </Typography>
+                                )}
+                                <IconButton
+                                    size="small"
+                                    onClick={() => removeFile(index)}
+                                    sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'rgba(255,255,255,0.7)' }}
+                                >
+                                    <DeleteIcon fontSize="small" sx={{ color: 'red' }} />
+                                </IconButton>
+                            </Paper>
+                        );
+                    })}
                 </Box>
             )}
         </Box>
@@ -109,3 +139,4 @@ const MultipleImageUploader = ({ files, setFiles }: { files: any[], setFiles: (f
 };
 
 export default MultipleImageUploader;
+// ...existing code...

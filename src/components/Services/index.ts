@@ -7,6 +7,12 @@ export const getRequestOld = (url: string, extras = {}) => oldClient.get(url, ex
 
 export const postRequest = (url: string, payload = {}) => client.post(url, payload);
 
+export const postJsonRequest = (url: string, payload = {}) => client.post(url, payload, {
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
 export const patchRequest = (url: string, payload = {}, extras = {}) =>
     client.patch(url, payload, extras);
 

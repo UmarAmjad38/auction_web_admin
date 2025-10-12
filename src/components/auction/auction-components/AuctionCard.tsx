@@ -197,15 +197,37 @@ const AuctionCard = ({
                                 </Button>
                             </Box>
                         </Box>
-                        : ((headerType === "lots" && cardData.isPast) || headerType === "live" || headerType === "inventory") &&
+                        : <>
+                            {((headerType === "lots" && cardData.isPast && !cardData.sold && cardData.isMoved) || (headerType === "inventory" && cardData.isPast && !cardData.sold && cardData.isMoved)) &&
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    sx={{ position: 'absolute', top: 10, left: 10, backgroundColor: '#ff9800', color: 'white' }}
+                                >
+                                    Move
+                                </Button>
+                            }
+                            { (headerType === "live") ||
+                              ( (headerType === "lots" || headerType === "inventory") &&
+                                cardData.isPast &&
+                                !( !cardData.sold && cardData.isMoved ) ) &&
 
-                        <Button
-                            variant="contained"
-                            size="small"
-                            className={headerType === "live" ? classes.unSoldButtonLive : `${classes.soldButton} ${!cardData.sold ? classes.unSoldButton : ''}`}
-                        >
-                            {headerType === "live" && cardData?.isLive ? "Live Streaming Auction" : cardData.sold ? "Sold" : "Unsold"}
-                        </Button>
+                            <Button
+                                variant="contained"
+                                size="small"
+                                className={headerType === "live" ? classes.unSoldButtonLive : `${classes.soldButton} ${!cardData.sold ? classes.unSoldButton : ''}`}
+                                sx={
+                                    headerType !== "live" ?
+                                    ( ((headerType === "lots" && cardData.isPast && !cardData.sold && cardData.isMoved) || (headerType === "inventory" && cardData.isPast && !cardData.sold && cardData.isMoved)) ?
+                                        { position: 'absolute', top: 50, left: 10 } :
+                                        { position: 'absolute', top: 10, left: 10 }
+                                    ) : {}
+                                }
+                            >
+                                {headerType === "live" && cardData?.isLive ? "Live Streaming Auction" : cardData.sold ? "Sold" : "Unsold"}
+                            </Button>
+                            }
+                        </>
                 }
 
             </Box>
@@ -302,21 +324,21 @@ const AuctionCard = ({
                             <Button className={classes.joinButton} variant="outlined" size="small" color="primary" onClick={() => handleJoin(cardData.id)}>
                                 Join
                             </Button>
-                            : headerType === "lots" && cardData?.isPast ?
+                            : ((headerType === "lots" && cardData.isPast && !cardData.sold && !cardData.isMoved) || (headerType === "inventory" && cardData.isPast && !cardData.sold && !cardData.isMoved)) ?
                                 <Button className={classes.joinButton} variant="outlined" size="small" color="primary" onClick={() => handleMoveLot(cardData.id)}>
                                     Move
                                 </Button>
-                                : headerType === "lots" && !cardData?.isPast ?
-                                    <Tooltip title={isFeatured ? "Click to unfeature" : "Click to feature"}>
-                                        <FormControlLabel
-                                            control={
-                                                <Switch checked={isFeatured}
-                                                    onChange={() => handleFeaturedLot(cardData.id)}
-                                                />
-                                            }
-                                            label={isFeatured ? "Featured" : "Unfeatured"}
-                                        />
-                                    </Tooltip>
+                                    : headerType === "lots" && !cardData.isPast ?
+                                        <Tooltip title={isFeatured ? "Click to unfeature" : "Click to feature"}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch checked={isFeatured}
+                                                        onChange={() => handleFeaturedLot(cardData.id)}
+                                                    />
+                                                }
+                                                label={isFeatured ? "Featured" : "Unfeatured"}
+                                            />
+                                        </Tooltip>
                                     : headerType === "auction" && !cardData?.isPast ?
                                         <Tooltip title={isFeaturedAuction ? "Click to unfeature" : "Click to feature"}>
                                             <FormControlLabel

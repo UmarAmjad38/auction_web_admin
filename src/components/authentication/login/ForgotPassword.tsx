@@ -8,7 +8,7 @@ import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
 import { useNavigate } from 'react-router-dom';
 import { useForgotPasswordStyles } from './LoginStyles';
 import theme from '../../../theme';
-import { ErrorMessage } from '../../../utils/ToastMessages';
+import { ErrorMessage, SuccessMessage } from '../../../utils/ToastMessages';
 import { forgotPassword } from '../../Services/Methods';
 
 const ForgotPassword = ({ setEmail }: any) => {
@@ -36,7 +36,8 @@ const ForgotPassword = ({ setEmail }: any) => {
         try {
             // Critical request:
             let response: any = await forgotPassword(email)
-            if (response.data.startsWith("OTP has been sent to:")) {
+             if (response.data.Result == true) {
+                SuccessMessage(response.data.Message)
                 setEmail(email)
                 navigate('/reset-password');
             } else {

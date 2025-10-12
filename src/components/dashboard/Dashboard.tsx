@@ -46,40 +46,54 @@ const Dashboard = () => {
             setIsFetching(true)
             try {
                 const response = await getDashboardStatistics();
+                const updatedData = response?.data ?? {};
 
-                const updatedData = response.data;
-                if (updatedData) {
-                    setStatistics([
-                        {
-                            title: "Total Amount Received",
-                            value: `$ ${Number(updatedData.TotalPaid).toLocaleString()}+`,
-                            date: "9 February 2024",
-                            icon: <PriceChangeRoundedIcon className={classes.cardIcon} />,
-                        },
-                        {
-                            title: "Total Amount Pending",
-                            value: `$ ${Number(updatedData.PendingAmount).toLocaleString()}+`,
-                            date: "12 January 2024",
-                            icon: <PendingActionsRoundedIcon className={classes.cardIcon} />,
-                        },
-                        {
-                            title: "Total Products",
-                            value: `${Number(updatedData.TotalLots).toLocaleString()}+`,
-                            date: "2 December 2024",
-                            icon: <CategoryRoundedIcon className={classes.cardIcon} />,
-                        },
-                        {
-                            title: "Total Products Sold",
-                            value: `${Number(updatedData.SoldLots).toLocaleString()}+`,
-                            date: "9 February 2024",
-                            icon: <MilitaryTechRoundedIcon className={classes.cardIcon} />,
-                        },
-                    ]);
-                } else {
-                    setStatistics({});
-                }
+                // helper to coerce to safe number (fallback 0)
+                const safeNumber = (v: any) => {
+                    const n = Number(v);
+                    return Number.isFinite(n) ? n : 0;
+                };
+
+                // Map API fields (support both old and new shapes)
+                const totalReceived = safeNumber(updatedData.TotalPaid ?? updatedData.ReceivedAmount ?? updatedData.Received ?? 0);
+                const totalPending = safeNumber(updatedData.PendingAmount ?? updatedData.Pending ?? 0);
+                const totalProducts = safeNumber(updatedData.TotalLots ?? updatedData.AuctionProductsCount ?? 0);
+                const totalProductsSold = safeNumber(updatedData.SoldLots ?? updatedData.AuctionsSoldProductsCount ?? 0);
+
+                setStatistics([
+                    {
+                        title: "Total Amount Received",
+                        value: `$ ${totalReceived.toLocaleString()}+`,
+                        date: "9 February 2024",
+                        raw: totalReceived,
+                        icon: <PriceChangeRoundedIcon className={classes.cardIcon} />,
+                    },
+                    {
+                        title: "Total Amount Pending",
+                        value: `$ ${totalPending.toLocaleString()}+`,
+                        date: "12 January 2024",
+                        raw: totalPending,
+                        icon: <PendingActionsRoundedIcon className={classes.cardIcon} />,
+                    },
+                    {
+                        title: "Total Products",
+                        value: `${totalProducts.toLocaleString()}+`,
+                        date: "2 December 2024",
+                        raw: totalProducts,
+                        icon: <CategoryRoundedIcon className={classes.cardIcon} />,
+                    },
+                    {
+                        title: "Total Products Sold",
+                        value: `${totalProductsSold.toLocaleString()}+`,
+                        date: "9 February 2024",
+                        raw: totalProductsSold,
+                        icon: <MilitaryTechRoundedIcon className={classes.cardIcon} />,
+                    },
+                ]);
 
             } catch (error) {
+                // keep the UI stable on error
+                setStatistics([]);
             } finally {
                 setIsFetching(false); // Set loading state to false when the call ends
             }
@@ -113,9 +127,11 @@ const Dashboard = () => {
                                         </Typography>
                                         {item.icon}
                                     </Box>
-                                    <Typography className={classes.cardValue}>
-                                        {item.value}
-                                    </Typography>
+                                    <Tooltip title={String(item.raw ?? item.value)}>
+                                        <Typography className={classes.cardValue}>
+                                            {item.value}
+                                        </Typography>
+                                    </Tooltip>
                                 </Box>
                                 <Box sx={{ display: 'flex', alignItems: 'end', justifyContent: "space-between" }}>
                                     <Typography className={classes.cardDate}>

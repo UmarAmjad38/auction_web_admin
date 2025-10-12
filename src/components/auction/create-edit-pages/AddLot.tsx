@@ -41,6 +41,10 @@ const AddLot = ({ socket }: any) => {
     const [isFetchingData, setIsFetchingData] = useState(false);
     const [auction, setAuction]: any = useState({})
     const [lot, setLot]: any = useState({})
+    const [deletedIds, setDeletedIds] = useState<number[]>([]);
+    const [originalCover, setOriginalCover] = useState<string>('');
+    const [originalBidsRange, setOriginalBidsRange] = useState<any[]>([]);
+    const [deletedCover, setDeletedCover] = useState(false);
 
     const categories: CategoryType = {
         "Vehicles": ["Automobiles/Cars", "Motorcycles", "SUVs", "Trucks", "Buses", "RVs & Campers", "Boats", "Trailers", "Specialized Vehicles"],
@@ -88,23 +92,6 @@ const AddLot = ({ socket }: any) => {
         }
     }, []);
 
-    useEffect(() => {
-        if (!isEdit) {
-            const fetchHighestLotNumber = async () => {
-                try {
-                    const lotsResponse = await getInventoryLots();
-                    const lots = lotsResponse.data || [];
-                    const maxLotNo = lots.length > 0 ? Math.max(...lots.map((lot: any) => parseInt(lot.LotNo) || 0)) : 0;
-                    const nextLotNumber = maxLotNo + 1;
-                    formik.setFieldValue('lotNumber', nextLotNumber.toString());
-                } catch (error) {
-                    console.error('Error fetching lots:', error);
-                }
-            };
-            fetchHighestLotNumber();
-        }
-    }, [isEdit]);
-
     const youtubeRegex =
         /(?:youtube\.com\/(?:watch\?v=|embed\/|live\/|v\/|e\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
 
@@ -112,6 +99,120 @@ const AddLot = ({ socket }: any) => {
         const match = url.match(youtubeRegex);
         return match ? match[1] : "";
     };
+
+    const bidsRangeSchema = Yup.array()
+        .of(
+            Yup.object().shape({
+                startAmount: Yup.number()
+                    .required('Start Amount is required')
+                    .typeError('Start Amount must be a number'),
+                endAmount: Yup.number()
+                    .required('End Amount is required')
+                    .typeError('End Amount must be a number')
+                    .moreThan(
+                        Yup.ref('startAmount'),
+                        'End Amount must be greater than Start Amount'
+                    ),
+                bidRangeAmount: Yup.number()
+                    .required('Bid Range Amount is required')
+                    .typeError('Bid Range Amount must be a number'),
+            })
+        )
+        .required('Bids Range is required');
+
+    const validationSchema = Yup.object({
+        // orderNumber: Yup.string().required('Order Number is required'),
+        lotNumber: Yup.string().required('Lot Number is required'),
+        category: Yup.string().required('Category is required'),
+        subCategory: Yup.string().required('Sub-Category is required'),
+        lead: Yup.string().required('Lead is required'),
+        reserveAmount: Yup.number().required('Reserve Amount is required').typeError('Reserve Amount must be a number'),
+        bidsRange: isEdit ? bidsRangeSchema : bidsRangeSchema.min(1, 'At least one bid range is required'),
+        description: Yup.string().max(500).required('Description is required'),
+        startDate: Yup.date()
+            .required('Start Date is required')
+            .test(
+                'is-within-auction-range',
+                'Start Date must be within the auction period',
+                function (value) {
+                    if (!value || !auction?.startDate || !auction?.endDate) return true;
+
+                    const auctionStart = new Date(auction.startDate);
+                    const auctionEnd = new Date(auction.endDate);
+                    auctionStart.setHours(0, 0, 0, 0);
+                    auctionEnd.setHours(0, 0, 0, 0);
+
+                    return value >= auctionStart && value <= auctionEnd;
+                }
+            ),
+        endDate: Yup.date()
+            .required('End Date is required')
+            .test(
+                'is-within-auction-range',
+                'End Date must be within the auction period',
+                function (value) {
+                    if (!value || !auction?.startDate || !auction?.endDate) return false;
+
+                    const auctionStart = new Date(auction.startDate);
+                    const auctionEnd = new Date(auction.endDate);
+                    auctionStart.setHours(0, 0, 0, 0);
+                    auctionEnd.setHours(0, 0, 0, 0);
+
+                    return value >= auctionStart && value <= auctionEnd;
+                }
+            )
+            .test(
+                'is-after-start-date',
+                'End Date must be greater than or equal to Start Date',
+                function (value) {
+                    if (!value || !this.parent.startDate) return true;
+
+                    return value >= this.parent.startDate;
+                }
+            ),
+        startTime: Yup.string()
+            .required('Start Time is required')
+            .test(
+                'valid-start-time',
+                `Start time must be greater or equal to auction's start time (${auction?.startTime})`,
+                function (value) {
+                    if (!value || !formik.values.startDate || !auction?.startDate || !auction?.startTime) {
+                        return true;
+                    }
+
+                    const lotStartDate = new Date(formik.values.startDate).setHours(0, 0, 0, 0);
+                    const auctionStartDate = new Date(auction.startDate).setHours(0, 0, 0, 0);
+
+                    if (lotStartDate === auctionStartDate) {
+                        return value >= convertTo24HourFormat(auction.startTime);
+                    }
+                    return true;
+                }
+            ),
+        endTime: Yup.string()
+            .required('End Time is required')
+            .test(
+                'valid-end-time',
+                `End time must be lesser or equal to auction's end time (${auction?.endTime})`,
+                function (value) {
+                    if (!value || !formik.values.endDate || !auction?.endDate || !auction?.endTime) {
+                        return true;
+                    }
+
+                    const lotEndDate = new Date(formik.values.endDate).setHours(0, 0, 0, 0);
+                    const auctionEndDate = new Date(auction.endDate).setHours(0, 0, 0, 0);
+
+                    if (lotEndDate === auctionEndDate) {
+                        return value <= convertTo24HourFormat(auction.endTime);
+                    }
+                    return true;
+                }
+            ),
+        auctionImage: Yup.array().of(Yup.mixed()).min(1, 'At least one image is required').required('Auction Image is required'),
+        internalNotes: Yup.string(),
+        isYoutube: Yup.boolean().default(false),
+        // youtubeUrl: Yup.string().transform((value) => (value === "" ? null : value)).nullable()
+    });
 
     const formik = useFormik({
         initialValues: {
@@ -128,122 +229,11 @@ const AddLot = ({ socket }: any) => {
             endTime: '',
             internalNotes: '',
             auctionImage: [] as any[],
-            bidsRange: [{ startAmount: '', endAmount: '', bidRangeAmount: '' }],
+            bidsRange: [{ id: 0, startAmount: '', endAmount: '', bidRangeAmount: '' }],
             youtubeUrl: '',
             isYoutube: true
         },
-        validationSchema: Yup.object({
-            // orderNumber: Yup.string().required('Order Number is required'),
-            lotNumber: Yup.string().required('Lot Number is required'),
-            category: Yup.string().required('Category is required'),
-            subCategory: Yup.string().required('Sub-Category is required'),
-            lead: Yup.string().required('Lead is required'),
-            reserveAmount: Yup.number().required('Reserve Amount is required').typeError('Reserve Amount must be a number'),
-            bidsRange: Yup.array()
-                .of(
-                    Yup.object().shape({
-                        startAmount: Yup.number()
-                            .required('Start Amount is required')
-                            .typeError('Start Amount must be a number'),
-                        endAmount: Yup.number()
-                            .required('End Amount is required')
-                            .typeError('End Amount must be a number')
-                            .moreThan(
-                                Yup.ref('startAmount'),
-                                'End Amount must be greater than Start Amount'
-                            ),
-                        bidRangeAmount: Yup.number()
-                            .required('Bid Range Amount is required')
-                            .typeError('Bid Range Amount must be a number'),
-                    })
-                )
-                .min(1, 'At least one bid range is required')
-                .required('Bids Range is required'),
-            description: Yup.string().max(500).required('Description is required'),
-            startDate: Yup.date()
-                .required('Start Date is required')
-                .test(
-                    'is-within-auction-range',
-                    'Start Date must be within the auction period',
-                    function (value) {
-                        if (!value || !auction?.startDate || !auction?.endDate) return true;
-
-                        const auctionStart = new Date(auction.startDate);
-                        const auctionEnd = new Date(auction.endDate);
-                        auctionStart.setHours(0, 0, 0, 0);
-                        auctionEnd.setHours(0, 0, 0, 0);
-
-                        return value >= auctionStart && value <= auctionEnd;
-                    }
-                ),
-            endDate: Yup.date()
-                .required('End Date is required')
-                .test(
-                    'is-within-auction-range',
-                    'End Date must be within the auction period',
-                    function (value) {
-                        if (!value || !auction?.startDate || !auction?.endDate) return false;
-
-                        const auctionStart = new Date(auction.startDate);
-                        const auctionEnd = new Date(auction.endDate);
-                        auctionStart.setHours(0, 0, 0, 0);
-                        auctionEnd.setHours(0, 0, 0, 0);
-
-                        return value >= auctionStart && value <= auctionEnd;
-                    }
-                )
-                .test(
-                    'is-after-start-date',
-                    'End Date must be greater than or equal to Start Date',
-                    function (value) {
-                        if (!value || !this.parent.startDate) return true;
-
-                        return value >= this.parent.startDate;
-                    }
-                ),
-            startTime: Yup.string()
-                .required('Start Time is required')
-                .test(
-                    'valid-start-time',
-                    `Start time must be greater or equal to auction's start time (${auction?.startTime})`,
-                    function (value) {
-                        if (!value || !formik.values.startDate || !auction?.startDate || !auction?.startTime) {
-                            return true;
-                        }
-
-                        const lotStartDate = new Date(formik.values.startDate).setHours(0, 0, 0, 0);
-                        const auctionStartDate = new Date(auction.startDate).setHours(0, 0, 0, 0);
-
-                        if (lotStartDate === auctionStartDate) {
-                            return value >= convertTo24HourFormat(auction.startTime);
-                        }
-                        return true;
-                    }
-                ),
-            endTime: Yup.string()
-                .required('End Time is required')
-                .test(
-                    'valid-end-time',
-                    `End time must be lesser or equal to auction's end time (${auction?.endTime})`,
-                    function (value) {
-                        if (!value || !formik.values.endDate || !auction?.endDate || !auction?.endTime) {
-                            return true;
-                        }
-
-                        const lotEndDate = new Date(formik.values.endDate).setHours(0, 0, 0, 0);
-                        const auctionEndDate = new Date(auction.endDate).setHours(0, 0, 0, 0);
-
-                        if (lotEndDate === auctionEndDate) {
-                            return value <= convertTo24HourFormat(auction.endTime);
-                        }
-                        return true;
-                    }
-                ),
-            auctionImage: Yup.array().of(Yup.mixed()).min(1, 'At least one image is required').required('Auction Image is required'),
-            internalNotes: Yup.string(),
-            isYoutube: Yup.boolean().default(false),
-            // youtubeUrl: Yup.string().transform((value) => (value === "" ? null : value)).nullable()
-        }),
+        validationSchema,
         onSubmit: (values) => {
             if (!isEdit) {
                 const newLot = {
@@ -256,7 +246,7 @@ const AddLot = ({ socket }: any) => {
                     ShortDescription: values.lead,
                     ReserveAmount: values.reserveAmount,
                     LongDescription: values.description,
-                    BidStartAmount: values.bidsRange[0]?.startAmount,
+                    BidStartAmount: parseInt(values.bidsRange[0]?.startAmount) || 0,
                     StartDate: formatDate(values.startDate),
                     EndDate: formatDate(values.endDate),
                     StartTime: formatTime(values.startTime),
@@ -267,6 +257,7 @@ const AddLot = ({ socket }: any) => {
                     UpdatedAt: formatDate(values.startDate),
                     AuctionId: getQueryParam('aucId'),
                     BidsRange: values.bidsRange.map((bid: any) => ({
+                        Id: bid.id || 0,
                         StartAmount: bid.startAmount,
                         EndAmount: bid.endAmount,
                         BidRange: bid.bidRangeAmount,
@@ -278,16 +269,16 @@ const AddLot = ({ socket }: any) => {
                 setLot(newLot)
             } else {
                 const edittedLot = {
-                    Id: getQueryParam('lotId'),
+                    Id: parseInt(getQueryParam('lotId') || '0'),
                     // OrderNo: values.orderNumber,
                     LotNo: values.lotNumber,
-                    Image: "example.jpg",
+                    Image: deletedCover ? '' : originalCover,
                     Category: values.category,
                     SubCategory: values.subCategory,
                     ShortDescription: values.lead,
                     ReserveAmount: values.reserveAmount,
                     LongDescription: values.description,
-                    BidStartAmount: values.bidsRange[0]?.startAmount,
+                    BidStartAmount: parseInt(values.bidsRange[0]?.startAmount) || 0,
                     StartDate: formatDate(values.startDate),
                     EndDate: formatDate(values.endDate),
                     StartTime: formatTime(values.startTime),
@@ -296,12 +287,13 @@ const AddLot = ({ socket }: any) => {
                     Currency: 'USD',
                     CreatedAt: formatDate(values.startDate),
                     UpdatedAt: formatDate(values.startDate),
-                    AuctionId: getQueryParam('aucId'),
+                    AuctionId: parseInt(getQueryParam('aucId') || '0'),
                     BidsRange: values.bidsRange.map((bid: any) => ({
-                        StartAmount: bid.startAmount,
-                        EndAmount: bid.endAmount,
-                        BidRange: bid.bidRangeAmount,
-                        LotId: getQueryParam('lotId'),
+                        Id: bid.id || 0,
+                        StartAmount: parseInt(bid.startAmount),
+                        EndAmount: parseInt(bid.endAmount),
+                        BidRange: parseInt(bid.bidRangeAmount),
+                        LotId: parseInt(getQueryParam('lotId') || '0'),
                     })),
                     YoutubeId: extractYoutubeId(values.youtubeUrl),
                     IsYoutube: values.isYoutube ? true : false
@@ -311,6 +303,24 @@ const AddLot = ({ socket }: any) => {
         },
     });
 
+    const fetchNextLotNumber = async () => {
+        try {
+            const lotsResponse = await getInventoryLots();
+            const lots = lotsResponse.data || [];
+            const maxLotNo = lots.length > 0 ? Math.max(...lots.map((lot: any) => parseInt(lot.LotNo) || 0)) : 0;
+            const nextLotNumber = maxLotNo + 1;
+            formik.setFieldValue('lotNumber', nextLotNumber.toString());
+        } catch (error) {
+            console.error('Error fetching lots:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (!isEdit) {
+            fetchNextLotNumber();
+        }
+    }, [isEdit]);
+
     useEffect(() => {
         const lotId = getQueryParam('lotId');
         if (lotId) {
@@ -318,15 +328,24 @@ const AddLot = ({ socket }: any) => {
             const fetchAuctionDetails = async () => {
                 try {
                     const response = await getLotDetailsById(lotId);
-                    const images = response.data.Images;
+                    const images = response.data.Images ? response.data.Images.map((img: any) => ({ id: img.Id, url: img.Image, isExisting: true })) : [];
                     const bidsRange = response.data.BidsRange?.map((bid: any) => ({
+                        id: bid.Id,
                         startAmount: bid.StartAmount,
                         endAmount: bid.EndAmount,
                         bidRangeAmount: bid.BidRange
                     }))
+                    setOriginalBidsRange(bidsRange || [])
                     const lot = response.data.Lot;
 
                     if (lot) {
+                        // Include main lot image URL in files array if not already present
+                        let initialFiles = images.length > 0 ? images : [];
+                        if (lot.Image && !initialFiles.some((f: any) => f.url === lot.Image)) {
+                            initialFiles.unshift({ id: null, url: lot.Image, isCover: true, isExisting: true });
+                        }
+                        setFiles(initialFiles);
+                        setOriginalCover(lot.Image || '');
                         const formattedLot: any = {
                             // orderNumber: lot.OrderNo,
                             lotNumber: lot.LotNo,
@@ -341,20 +360,15 @@ const AddLot = ({ socket }: any) => {
                             endTime: formatTimeInput(lot.EndTime),
                             internalNotes: lot.InternalNotes || '',
                             youtubeUrl: lot.YoutubeUrl || "",
-                            auctionImage: images || [],
+                            auctionImage: initialFiles,
                             bidsRange: bidsRange,
                             isYoutube: lot.IsYoutube
                         };
-                        // Include main lot image URL in files array if not already present
-                        const initialFiles = images && images.length > 0 ? images : [];
-                        if (lot.Image && !initialFiles.includes(lot.Image)) {
-                            initialFiles.unshift(lot.Image);
-                        }
-                        setFiles(initialFiles);
                         setSelectedCategory(formattedLot.category);
                         setSubCategories(categories[formattedLot.category]); // Update subcategories
                         // Populate formik fields
                         formik.setValues(formattedLot);
+                        formik.validateForm();
 
                     } else {
                         ErrorMessage('Lot data not found');
@@ -399,41 +413,54 @@ const AddLot = ({ socket }: any) => {
     }, [submissionAttempt]);
 
     const handleFormSubmission = async (payload: any, isAnotherLot: number) => {
-        const formData = new FormData();
-        formData.append("payload", JSON.stringify(payload));
-        if (files) {
-            if (isEdit) {
-                const edittedFormData = new FormData();
-                // edittedFormData.append("file", file)
-                files.forEach((file: File) => {
-                    edittedFormData.append("file", file);
-                });
-                editLotImage(getQueryParam('lotId'), edittedFormData)
-                    .then((response) => {
-                    })
-                    .catch((error) => {
-                        ErrorMessage('Error updating image!');
-                    });
-            }
-            files.forEach((file: any) => {
-                formData.append("file", file);
-            });
-            setFiles([]);
-        }
+        const newFiles = files && files.length > 0 ? files.filter((file: any) => file instanceof File && (!isEdit || file !== files[0])) : [];
+        const remainingFiles = files && files.length > 0 ? files.filter((file: any) => !(file instanceof File)) : [];
 
         if (isEdit) {
             editLot(payload)
-                .then((response) => {
+                .then((response: any) => {
+                    const coverChanged = files.length > 0 && files[0] && (files[0] as any).url !== originalCover || deletedCover;
+                    if (coverChanged || newFiles.length > 0) {
+                        const edittedFormData = new FormData();
+                        if (coverChanged && files.length > 0 && (files[0] as any) instanceof File) {
+                            edittedFormData.append("file", files[0]);
+                        } else if (!coverChanged && !deletedCover && originalCover) {
+                            edittedFormData.append("keepCover", originalCover);
+                        }
+                        if (deletedCover) {
+                            edittedFormData.append("deleteCover", "true");
+                        }
+                        newFiles.forEach((file: any) => {
+                            edittedFormData.append("file", file);
+                        });
+                        editLotImage(getQueryParam('lotId'), edittedFormData)
+                            .then((response: any) => {
+                                setFiles(remainingFiles);
+                                setDeletedCover(false);
+                            })
+                            .catch((error: any) => {
+                                ErrorMessage('Error updating image!');
+                            });
+                    } else {
+                        setFiles(remainingFiles);
+                        setDeletedCover(false);
+                    }
                     SuccessMessage('Lot updated successfully!');
                     formik.resetForm();
                     navigate('/auction');
                 })
-                .catch((error) => {
-                    ErrorMessage('Error updating lot!');
+                .catch((error: any) => {
+                    // ErrorMessage('Error updating lot!');
                 });
         } else {
+            const formData = new FormData();
+            formData.append("payload", JSON.stringify(payload));
+            newFiles.forEach((file: File) => {
+                formData.append("file", file);
+            });
             createLot(formData)
-                .then((response) => {
+                .then((response: any) => {
+                    setFiles(remainingFiles);
                     formik.resetForm();
                     if (response.data.RoomId) {
                         createRoom(socket, response.data.RoomId);
@@ -442,8 +469,11 @@ const AddLot = ({ socket }: any) => {
                         navigate('/auction')
                     }
                     SuccessMessage('Lot created successfully!');
+                    if (isAnotherLot) {
+                        fetchNextLotNumber();
+                    }
                 })
-                .catch((error) => {
+                .catch((error: any) => {
                     ErrorMessage('Error creating lot!');
                 });
         }
@@ -488,17 +518,33 @@ const AddLot = ({ socket }: any) => {
     }
 
     const handleSubmit = (addAnother: number) => {
+        console.log('handleSubmit called', addAnother);
         setSubmissionAttempt(!submissionAttempt)
+        const requiredFields = ['lotNumber', 'category', 'subCategory', 'lead', 'reserveAmount', 'bidsRange', 'description', 'startDate', 'endDate', 'startTime', 'endTime', 'auctionImage'];
+        const allRequiredFilled = requiredFields.every(field => {
+            const value = (formik.values as any)[field];
+            if (field === 'bidsRange') {
+                return isEdit || value.length > 0;
+            }
+            if (Array.isArray(value)) return value.length > 0;
+            return value !== '';
+        });
+        console.log('errors length', Object.keys(formik.errors).length, 'allRequiredFilled', allRequiredFilled);
+        console.log('errors', formik.errors);
+        console.log('values', formik.values);
         if (
             Object.keys(formik.errors).length === 0 &&
-            Object.entries(formik.values).every(([key, value]) => key === "youtubeUrl" || value !== "")
+            allRequiredFilled
         ) {
+            console.log('submitting');
             if (addAnother === 0) {
                 if (!isEdit) setSaveModal(true);
                 else handleSaveLot();
             } else {
                 setConfirmModal(true)
             }
+        } else {
+            console.log('not submitting');
         }
     }
     return (
@@ -719,6 +765,20 @@ const AddLot = ({ socket }: any) => {
                             setFiles(uploadedFiles); // Update local state
                             formik.setFieldValue('auctionImage', uploadedFiles); // Update Formik state
                         }}
+                        onRemove={(file) => {
+                            if (file.isExisting && file.id) {
+                                fetch(`https://bd.parkersauction.com/api/lots/deleteimage?id=${file.id}`, { method: 'DELETE' })
+                                    .then(() => {
+                                        SuccessMessage('Image deleted successfully');
+                                    })
+                                    .catch((error) => {
+                                        ErrorMessage('Error deleting image');
+                                    });
+                            } else if (file.isCover || !file.id) {
+                                setDeletedCover(true);
+                                setOriginalCover('');
+                            }
+                        }}
                     />
                     {formik.touched.auctionImage && formik.errors.auctionImage && typeof formik.errors.auctionImage === 'string' && (
                         <Typography color="error" variant="body2">
@@ -791,6 +851,7 @@ const AddLot = ({ socket }: any) => {
                             variant="contained"
                             color="primary"
                             onClick={() => handleSubmit(0)}
+                            disabled={isFetchingData}
                         >
                             {isEdit ? "Update Lot" : "Confirm"}
                         </Button>

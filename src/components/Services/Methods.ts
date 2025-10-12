@@ -1,4 +1,4 @@
-import { getRequest, getRequestOld, putRequest, postWithFormRequest, postRequest } from './index';
+import { getRequest, getRequestOld, putRequest, postWithFormRequest, postRequest, postJsonRequest } from './index';
 
 export const SignInUser = (payload: LogInPayload) => getRequest(`/users/login?username=${payload.email}&password=${payload?.password}`)
 export const forgotPassword = (email: any) => putRequest(`/clients/forgotpassword?email=${email}`)
@@ -22,7 +22,7 @@ export const setFeaturedAuctions = (id: any) => getRequest(`/auctions/featured?i
 
 // Lot Methods
 export const createLot = (payload: any) => postWithFormRequest('/lots/create', payload);
-export const editLot = (payload: any) => postRequest('/lots/editlot', payload);
+export const editLot = (payload: any) => postJsonRequest('/lots/editlot', payload);
 export const editLotImage = (id: any, payload: any) => postWithFormRequest(`/lots/editcover?id=${id}`, payload);
 export const getCurrentLots = () => getRequest('/lots/currentlots');
 export const getPastLots = () => getRequest('/lots/pastlots');
