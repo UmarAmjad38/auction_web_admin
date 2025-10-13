@@ -589,7 +589,7 @@ const AddLot = ({ socket }: any) => {
                                 helperText={formik.touched.orderNumber && formik.errors.orderNumber}
                             />
                         </Box> */}
-                        <Box flex={1} mx={2}>
+                        <Box flex={1}>
                             <Typography className={classes.label}>
                                 Lot Number
                             </Typography>
@@ -627,7 +627,7 @@ const AddLot = ({ socket }: any) => {
                         </Box>
                     </Box>
 
-                    <Box display="flex" gap={4} mb={3}>
+                    <Box display="flex" gap={4} mb={3} justifyContent={'space-between'}>
                         <Box flex={1}>
                             <Typography className={classes.label}>
                                 Sub-Category

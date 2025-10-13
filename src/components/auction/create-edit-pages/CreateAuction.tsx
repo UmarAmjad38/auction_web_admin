@@ -200,7 +200,7 @@ const CreateAuction = ({ setIsContinue, setAuctionData, file, setFile }: any) =>
                                     helperText={formik.touched.auctionId && formik.errors.auctionId}
                                 />
                             </Box> */}
-                            <Box flex={1} mx={2}>
+                            <Box flex={1}>
                                 <Typography className={classes.label}>
                                     Auction Name
                                 </Typography>
