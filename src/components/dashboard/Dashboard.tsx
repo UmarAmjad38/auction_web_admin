@@ -58,7 +58,7 @@ const Dashboard = () => {
                 const totalReceived = safeNumber(updatedData.TotalPaid ?? updatedData.ReceivedAmount ?? updatedData.Received ?? 0);
                 const totalPending = safeNumber(updatedData.PendingAmount ?? updatedData.Pending ?? 0);
                 const totalProducts = safeNumber(updatedData.TotalLots ?? updatedData.AuctionProductsCount ?? 0);
-                const totalProductsSold = safeNumber(updatedData.SoldLots ?? updatedData.AuctionsSoldProductsCount ?? 0);
+                const totalProductsSold = safeNumber(updatedData.SoldLots ?? updatedData.LotSoldProductsCount ?? 0);
 
                 setStatistics([
                     {
