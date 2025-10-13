@@ -207,10 +207,20 @@ const AuctionCard = ({
                                     Move
                                 </Button>
                             }
+                            {((headerType === "lots" || headerType === "inventory") && !cardData.isMoved && cardData.isReservedLot) &&
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    sx={{ position: 'absolute', top: 10, left: 10, backgroundColor: '#9c27b0', color: 'white' }}
+                                >
+                                    Reserved
+                                </Button>
+                            }
                             { (headerType === "live") ||
                               ( (headerType === "lots" || headerType === "inventory") &&
                                 cardData.isPast &&
-                                !( !cardData.sold && cardData.isMoved ) ) &&
+                                !( !cardData.sold && cardData.isMoved ) &&
+                                !( !cardData.isMoved && cardData.isReservedLot ) ) &&
 
                             <Button
                                 variant="contained"
@@ -324,7 +334,7 @@ const AuctionCard = ({
                             <Button className={classes.joinButton} variant="outlined" size="small" color="primary" onClick={() => handleJoin(cardData.id)}>
                                 Join
                             </Button>
-                            : ((headerType === "lots" && cardData.isPast && !cardData.sold && !cardData.isMoved) || (headerType === "inventory" && cardData.isPast && !cardData.sold && !cardData.isMoved)) ?
+                            : ((headerType === "lots" && cardData.isPast && !cardData.sold && !cardData.isMoved) || (headerType === "inventory" && cardData.isPast && !cardData.sold && !cardData.isMoved) || ((headerType === "lots" || headerType === "inventory") && !cardData.isMoved && cardData.isReservedLot)) ?
                                 <Button className={classes.joinButton} variant="outlined" size="small" color="primary" onClick={() => handleMoveLot(cardData.id)}>
                                     Move
                                 </Button>

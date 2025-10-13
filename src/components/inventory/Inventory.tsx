@@ -123,6 +123,7 @@ const Lots = ({ searchTerm }: any) => {
                     sold: item.IsSold,
                     isPast: item.IsPast,
                     isMoved: item.IsMoved,
+                    isReservedLot: item.IsReservedLot,
                     isFeatured: item.IsFeatured,
                     isLive: item.IsLive,
                     cityId: item.CityId,
